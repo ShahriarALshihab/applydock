@@ -85,10 +85,10 @@ export async function getCurrentUser() {
 /**
  * Require authentication - throws error or returns authenticated user
  */
-export async function requireAuth() {
+export async function requireAuth(): Promise<NonNullable<Awaited<ReturnType<typeof getCurrentUser>>> & { id: string }> {
   const user = await getCurrentUser();
   if (!user || !user.id) {
     throw new Error("Unauthorized: Please sign in to perform this action.");
   }
-  return user;
+  return user as NonNullable<typeof user> & { id: string };
 }

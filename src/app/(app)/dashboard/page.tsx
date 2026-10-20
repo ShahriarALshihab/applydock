@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -12,15 +13,29 @@ import { formatSalaryRange, formatRelativeTime } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { getApplications } from "@/lib/actions/application-actions";
+import { JobApplication } from "@/lib/types";
 
 export default function DashboardPage() {
-  const activeApps = INITIAL_APPLICATIONS.filter(
+  const [applications, setApplications] = React.useState<JobApplication[]>(INITIAL_APPLICATIONS);
+
+  React.useEffect(() => {
+    getApplications()
+      .then((dbApps) => {
+        if (dbApps && dbApps.length > 0) {
+          setApplications(dbApps);
+        }
+      })
+      .catch((err) => console.error("Failed to load dashboard applications:", err));
+  }, []);
+
+  const activeApps = applications.filter(
     (a) => a.status !== "rejected" && a.status !== "withdrawn"
   );
-  const interviewApps = INITIAL_APPLICATIONS.filter(
+  const interviewApps = applications.filter(
     (a) => a.status === "interview" || a.status === "screening"
   );
-  const offerApps = INITIAL_APPLICATIONS.filter((a) => a.status === "offer");
+  const offerApps = applications.filter((a) => a.status === "offer");
   const pendingTasks = INITIAL_TASKS.filter((t) => t.status !== "completed");
 
   return (
