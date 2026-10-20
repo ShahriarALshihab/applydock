@@ -14,19 +14,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getApplications } from "@/lib/actions/application-actions";
-import { JobApplication } from "@/lib/types";
+import { getSkills } from "@/lib/actions/skill-actions";
+import { getLearningTasks } from "@/lib/actions/task-actions";
+import { JobApplication, SkillItem, LearningTaskItem } from "@/lib/types";
 
 export default function DashboardPage() {
   const [applications, setApplications] = React.useState<JobApplication[]>(INITIAL_APPLICATIONS);
+  const [skills, setSkills] = React.useState<SkillItem[]>(INITIAL_SKILLS);
+  const [tasks, setTasks] = React.useState<LearningTaskItem[]>(INITIAL_TASKS);
 
   React.useEffect(() => {
-    getApplications()
-      .then((dbApps) => {
-        if (dbApps && dbApps.length > 0) {
-          setApplications(dbApps);
-        }
+    Promise.all([
+      getApplications(),
+      getSkills(),
+      getLearningTasks(),
+    ])
+      .then(([dbApps, dbSkills, dbTasks]) => {
+        if (dbApps && dbApps.length > 0) setApplications(dbApps);
+        if (dbSkills && dbSkills.length > 0) setSkills(dbSkills);
+        if (dbTasks && dbTasks.length > 0) setTasks(dbTasks);
       })
-      .catch((err) => console.error("Failed to load dashboard applications:", err));
+      .catch((err) => console.error("Failed to load dashboard data:", err));
   }, []);
 
   const activeApps = applications.filter(
@@ -36,7 +44,7 @@ export default function DashboardPage() {
     (a) => a.status === "interview" || a.status === "screening"
   );
   const offerApps = applications.filter((a) => a.status === "offer");
-  const pendingTasks = INITIAL_TASKS.filter((t) => t.status !== "completed");
+  const pendingTasks = tasks.filter((t) => t.status !== "completed");
 
   return (
     <div className="space-y-8">
@@ -66,7 +74,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500">Active Pipeline</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
                 <Briefcase className="h-4 w-4" />
               </div>
             </div>
@@ -81,13 +89,13 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500">Upcoming Interviews</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
                 <Calendar className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-white">{interviewApps.length}</span>
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">scheduled rounds</span>
+              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">scheduled rounds</span>
             </div>
           </CardContent>
         </Card>
@@ -96,13 +104,13 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500">Offers Extended</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-white">{offerApps.length}</span>
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">ready for decision</span>
+              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">ready for decision</span>
             </div>
           </CardContent>
         </Card>
@@ -111,12 +119,12 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500">Target Skills</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
                 <Award className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">{INITIAL_SKILLS.length}</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{skills.length}</span>
               <span className="text-xs text-slate-500">tracked proficiencies</span>
             </div>
           </CardContent>
@@ -153,15 +161,17 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right sm:text-right">
                   <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
-                    ৳155,000 / mo
+                    {formatSalaryRange(offerApps[0].salaryMin, offerApps[0].salaryMax, offerApps[0].salaryCurrency, offerApps[0].salaryPeriod)}
                   </div>
-                  <div className="text-2xs text-slate-500">Plus 2x Festival Bonuses</div>
+                  <div className="text-2xs text-slate-500">Includes performance &amp; festival bonuses</div>
                 </div>
               </div>
 
-              <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
-                {offerApps[0].notes}
-              </p>
+              {offerApps[0].notes && (
+                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+                  {offerApps[0].notes}
+                </p>
+              )}
             </div>
           )}
 
@@ -172,39 +182,45 @@ export default function DashboardPage() {
                 <CardTitle className="text-base">Interview Pipeline</CardTitle>
                 <CardDescription>Scheduled rounds with talent teams and technical leads</CardDescription>
               </div>
-              <Link href="/applications" className="text-xs font-semibold text-indigo-600 hover:underline">
+              <Link href="/applications" className="text-xs font-semibold text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white underline">
                 View all
               </Link>
             </CardHeader>
             <CardContent className="space-y-3">
-              {interviewApps.map((app) => (
-                <div
-                  key={app.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/60"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
-                        {app.companyName}
-                      </span>
-                      <span className="text-xs text-slate-500">• {app.jobTitle}</span>
-                    </div>
-                    <div className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                      {app.interviewStage || "Interview Scheduled"}
-                    </div>
-                    <div className="text-2xs text-slate-500">
-                      {formatSalaryRange(app.salaryMin, app.salaryMax, app.salaryCurrency, app.salaryPeriod)}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-2xs font-semibold text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800">
-                      <Calendar className="h-3 w-3 text-amber-600" />
-                      <span>{app.nextInterviewAt ? formatRelativeTime(app.nextInterviewAt) : "Upcoming"}</span>
-                    </div>
-                  </div>
+              {interviewApps.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  No active interviews scheduled yet.
                 </div>
-              ))}
+              ) : (
+                interviewApps.map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/60"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                          {app.companyName}
+                        </span>
+                        <span className="text-xs text-slate-500">• {app.jobTitle}</span>
+                      </div>
+                      <div className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                        {app.interviewStage || "Interview Scheduled"}
+                      </div>
+                      <div className="text-2xs text-slate-500">
+                        {formatSalaryRange(app.salaryMin, app.salaryMax, app.salaryCurrency, app.salaryPeriod)}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-2xs font-semibold text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800">
+                        <Calendar className="h-3 w-3 text-amber-600" />
+                        <span>{app.nextInterviewAt ? formatRelativeTime(app.nextInterviewAt) : "Upcoming"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
@@ -218,42 +234,48 @@ export default function DashboardPage() {
                 <CardTitle className="text-base">Target Learning Tasks</CardTitle>
                 <CardDescription>Milestones linked to target skills</CardDescription>
               </div>
-              <Link href="/learning" className="text-xs font-semibold text-indigo-600 hover:underline">
+              <Link href="/learning" className="text-xs font-semibold text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white underline">
                 View all
               </Link>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              {pendingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="rounded-lg border border-slate-200/80 p-3 space-y-1 dark:border-slate-800"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
-                      {task.title}
-                    </span>
-                    <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-2xs font-bold ${
-                        task.priority === "High"
-                          ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      }`}
-                    >
-                      {task.priority}
-                    </span>
-                  </div>
-                  {task.skillName && (
-                    <div className="text-2xs text-indigo-600 dark:text-indigo-400 font-medium">
-                      Skill: {task.skillName}
-                    </div>
-                  )}
-                  {task.dueAt && (
-                    <div className="text-2xs text-slate-400">
-                      Due: {formatRelativeTime(task.dueAt)}
-                    </div>
-                  )}
+              {pendingTasks.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-400">
+                  All learning tasks completed!
                 </div>
-              ))}
+              ) : (
+                pendingTasks.slice(0, 4).map((task) => (
+                  <div
+                    key={task.id}
+                    className="rounded-lg border border-slate-200/80 p-3 space-y-1 dark:border-slate-800"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                        {task.title}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-2xs font-bold ${
+                          task.priority === "High"
+                            ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        }`}
+                      >
+                        {task.priority}
+                      </span>
+                    </div>
+                    {task.skillName && (
+                      <div className="text-2xs text-emerald-700 dark:text-emerald-400 font-medium">
+                        Skill: {task.skillName}
+                      </div>
+                    )}
+                    {task.dueAt && (
+                      <div className="text-2xs text-slate-400">
+                        Due: {formatRelativeTime(task.dueAt)}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -261,7 +283,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Market Compensation Benchmarks</CardTitle>
-              <CardDescription>Target salary benchmark</CardDescription>
+              <CardDescription>Engineering roles in Bangladesh</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-xs text-slate-600 dark:text-slate-400">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">

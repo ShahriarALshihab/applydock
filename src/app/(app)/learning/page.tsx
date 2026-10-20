@@ -4,10 +4,16 @@ import * as React from "react";
 import { INITIAL_TASKS } from "@/lib/mock-data";
 import { LearningTaskItem, TaskPriority } from "@/lib/types";
 import { formatRelativeTime } from "@/lib/utils";
-import { Plus, Check, Clock } from "lucide-react";
+import { Plus, Check, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import {
+  getLearningTasks,
+  createLearningTask,
+  toggleTaskStatus,
+  deleteLearningTask,
+} from "@/lib/actions/task-actions";
 
 export default function LearningPage() {
   const [tasks, setTasks] = React.useState<LearningTaskItem[]>(INITIAL_TASKS);
@@ -18,28 +24,51 @@ export default function LearningPage() {
   const [priority, setPriority] = React.useState<TaskPriority>("High");
   const [dueAt, setDueAt] = React.useState("2026-10-25");
 
-  const handleToggleTask = (id: string) => {
+  React.useEffect(() => {
+    getLearningTasks()
+      .then((dbTasks) => {
+        if (dbTasks && dbTasks.length > 0) {
+          setTasks(dbTasks);
+        }
+      })
+      .catch((err) => console.error("Failed to load tasks from server:", err));
+  }, []);
+
+  const handleToggleTask = async (id: string) => {
+    const targetTask = tasks.find((t) => t.id === id);
+    if (!targetTask) return;
+
+    const isComp = targetTask.status === "completed";
+    const nextStatus = isComp ? "todo" : "completed";
+
+    // Optimistic UI update
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === id) {
-          const isComp = t.status === "completed";
           return {
             ...t,
-            status: isComp ? "todo" : "completed",
+            status: nextStatus,
             completedAt: isComp ? null : new Date().toISOString(),
           };
         }
         return t;
       })
     );
+
+    try {
+      await toggleTaskStatus(id, targetTask.status);
+    } catch (err) {
+      console.error("Failed to toggle task status on server:", err);
+    }
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    const tempId = `task-${Date.now()}`;
     const newTask: LearningTaskItem = {
-      id: `task-${Date.now()}`,
+      id: tempId,
       title: title.trim(),
       skillName: skillName.trim() || undefined,
       priority,
@@ -47,9 +76,33 @@ export default function LearningPage() {
       dueAt,
     };
 
+    // Optimistic update
     setTasks([newTask, ...tasks]);
     setTitle("");
     setIsAdding(false);
+
+    try {
+      const res = await createLearningTask({
+        title: newTask.title,
+        skillName: newTask.skillName,
+        priority: newTask.priority,
+        dueAt: newTask.dueAt,
+      });
+      if (res.success && res.task) {
+        setTasks((prev) => prev.map((t) => (t.id === tempId ? res.task! : t)));
+      }
+    } catch (err) {
+      console.error("Failed to create task on server:", err);
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteLearningTask(id);
+    } catch (err) {
+      console.error("Failed to delete task on server:", err);
+    }
   };
 
   const filteredTasks = tasks.filter((t) => {
@@ -74,7 +127,10 @@ export default function LearningPage() {
           </p>
         </div>
 
-        <Button onClick={() => setIsAdding(!isAdding)} className="gap-1.5 shadow-sm self-start sm:self-auto">
+        <Button
+          onClick={() => setIsAdding(!isAdding)}
+          className="gap-1.5 shadow-sm self-start sm:self-auto"
+        >
           <Plus className="h-4 w-4" />
           <span>New Task</span>
         </Button>
@@ -86,13 +142,13 @@ export default function LearningPage() {
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Sprint Progress ({completedCount} of {tasks.length} completed)
           </span>
-          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
             {progressPercent}%
           </span>
         </div>
         <div className="mt-2 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
           <div
-            className="h-full bg-indigo-600 transition-all duration-300 dark:bg-indigo-500"
+            className="h-full bg-emerald-600 transition-all duration-300 dark:bg-emerald-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -100,7 +156,7 @@ export default function LearningPage() {
 
       {/* Add Task Form */}
       {isAdding && (
-        <Card className="border-indigo-200 bg-indigo-50/30 p-6 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+        <Card className="border-slate-300 bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
             Create Learning Milestone
           </h3>
@@ -166,7 +222,7 @@ export default function LearningPage() {
           <button
             key={tab}
             onClick={() => setFilter(tab)}
-            className={`capitalize px-3 py-1.5 rounded-lg transition-colors ${
+            className={`capitalize px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               filter === tab
                 ? "bg-slate-900 text-white font-semibold dark:bg-slate-100 dark:text-slate-900"
                 : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
@@ -190,7 +246,7 @@ export default function LearningPage() {
             return (
               <div
                 key={task.id}
-                className={`flex items-start gap-3.5 rounded-xl border p-4 transition-colors ${
+                className={`flex items-start gap-3.5 rounded-xl border p-4 transition-colors group ${
                   isCompleted
                     ? "border-slate-200 bg-slate-50/60 dark:border-slate-800/60 dark:bg-slate-950/40"
                     : "border-slate-200/90 bg-white shadow-2xs hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
@@ -199,10 +255,10 @@ export default function LearningPage() {
                 {/* Custom Checkbox */}
                 <button
                   onClick={() => handleToggleTask(task.id)}
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors cursor-pointer ${
                     isCompleted
                       ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-slate-300 bg-white hover:border-indigo-600 dark:border-slate-700 dark:bg-slate-950"
+                      : "border-slate-300 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950"
                   }`}
                   aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
                 >
@@ -223,7 +279,7 @@ export default function LearningPage() {
 
                   <div className="flex flex-wrap items-center gap-3 text-2xs text-slate-500">
                     {task.skillName && (
-                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                         {task.skillName}
                       </span>
                     )}
@@ -237,16 +293,25 @@ export default function LearningPage() {
                   </div>
                 </div>
 
-                {/* Priority Badge */}
-                <span
-                  className={`shrink-0 rounded px-2 py-0.5 text-2xs font-bold ${
-                    task.priority === "High"
-                      ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900"
-                      : "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                  }`}
-                >
-                  {task.priority}
-                </span>
+                {/* Priority Badge & Delete Button */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`rounded px-2 py-0.5 text-2xs font-bold ${
+                      task.priority === "High"
+                        ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900"
+                        : "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                    }`}
+                  >
+                    {task.priority}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity cursor-pointer"
+                    title="Delete task"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             );
           })

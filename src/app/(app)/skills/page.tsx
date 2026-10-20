@@ -3,10 +3,11 @@
 import * as React from "react";
 import { INITIAL_SKILLS } from "@/lib/mock-data";
 import { SkillItem, SkillLevel } from "@/lib/types";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { getSkills, createSkill, deleteSkill } from "@/lib/actions/skill-actions";
 
 const LEVEL_LABELS: Record<SkillLevel, string> = {
   1: "Novice",
@@ -24,23 +25,59 @@ export default function SkillsPage() {
   const [currentLevel, setCurrentLevel] = React.useState<SkillLevel>(3);
   const [targetLevel, setTargetLevel] = React.useState<SkillLevel>(5);
 
-  const handleAddSkill = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    getSkills()
+      .then((dbSkills) => {
+        if (dbSkills && dbSkills.length > 0) {
+          setSkills(dbSkills);
+        }
+      })
+      .catch((err) => console.error("Failed to load skills from server:", err));
+  }, []);
+
+  const handleAddSkill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const tempId = `sk-${Date.now()}`;
     const newSkill: SkillItem = {
-      id: `sk-${Date.now()}`,
+      id: tempId,
       name: name.trim(),
       category,
       currentLevel,
       targetLevel,
       evidenceCount: 1,
-      notes: "Newly declared skill goal.",
+      notes: `Target proficiency mapped for ${name.trim()}`,
     };
 
+    // Optimistic update
     setSkills([newSkill, ...skills]);
     setName("");
     setIsAdding(false);
+
+    try {
+      const res = await createSkill({
+        name: newSkill.name,
+        category: newSkill.category,
+        currentLevel: newSkill.currentLevel,
+        targetLevel: newSkill.targetLevel,
+        notes: newSkill.notes,
+      });
+      if (res.success && res.skill) {
+        setSkills((prev) => prev.map((s) => (s.id === tempId ? res.skill! : s)));
+      }
+    } catch (err) {
+      console.error("Failed to persist skill:", err);
+    }
+  };
+
+  const handleDeleteSkill = async (id: string) => {
+    setSkills((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await deleteSkill(id);
+    } catch (err) {
+      console.error("Failed to delete skill on server:", err);
+    }
   };
 
   // Group by category
@@ -58,14 +95,17 @@ export default function SkillsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/90 pb-6 dark:border-slate-800">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Skills & Proficiency Matrix
+            Skills &amp; Proficiency Matrix
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Map technical proficiencies on a verified 1–5 scale, set target readiness goals, and bridge gaps
           </p>
         </div>
 
-        <Button onClick={() => setIsAdding(!isAdding)} className="gap-1.5 shadow-sm self-start sm:self-auto">
+        <Button
+          onClick={() => setIsAdding(!isAdding)}
+          className="gap-1.5 shadow-sm self-start sm:self-auto"
+        >
           <Plus className="h-4 w-4" />
           <span>Add Skill</span>
         </Button>
@@ -73,9 +113,9 @@ export default function SkillsPage() {
 
       {/* Add Skill Form */}
       {isAdding && (
-        <Card className="border-indigo-200 bg-indigo-50/30 p-6 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+        <Card className="border-slate-300 bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-            Declare New Skill & Target Level
+            Declare New Skill &amp; Target Level
           </h3>
           <form onSubmit={handleAddSkill} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -98,7 +138,7 @@ export default function SkillsPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as SkillItem["category"])}
-                  className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
@@ -180,7 +220,7 @@ export default function SkillsPage() {
                   const gap = skill.targetLevel - skill.currentLevel;
 
                   return (
-                    <div key={skill.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
+                    <div key={skill.id} className="py-3 first:pt-0 last:pb-0 space-y-2 group">
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-sm font-bold text-slate-900 dark:text-white">
@@ -190,7 +230,7 @@ export default function SkillsPage() {
                             ({LEVEL_LABELS[skill.currentLevel]})
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           {gap > 0 ? (
                             <span className="inline-flex items-center gap-0.5 rounded bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800">
                               <span>Target: L{skill.targetLevel}</span>
@@ -202,6 +242,13 @@ export default function SkillsPage() {
                               <span>Goal Met</span>
                             </span>
                           )}
+                          <button
+                            onClick={() => handleDeleteSkill(skill.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity cursor-pointer"
+                            title="Delete skill"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
 
@@ -216,7 +263,7 @@ export default function SkillsPage() {
                               key={lvl}
                               className={`h-2 flex-1 rounded-sm transition-colors ${
                                 isCurrent
-                                  ? "bg-indigo-600 dark:bg-indigo-500"
+                                  ? "bg-emerald-600 dark:bg-emerald-500"
                                   : isTarget
                                   ? "bg-amber-300 dark:bg-amber-600/60"
                                   : "bg-slate-100 dark:bg-slate-800"
