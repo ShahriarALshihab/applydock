@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { JobApplication, ApplicationStatus } from "@/lib/types";
 import { formatSalaryRange, formatDate, formatRelativeTime } from "@/lib/utils";
 import {
@@ -12,8 +13,10 @@ import {
   Mail,
   User,
   Trash2,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { getApplicationActivities } from "@/lib/actions/application-actions";
 
 interface ApplicationDrawerProps {
   application: JobApplication | null;
@@ -40,6 +43,18 @@ export function ApplicationDrawer({
   onStatusChange,
   onDelete,
 }: ApplicationDrawerProps) {
+  const [activities, setActivities] = React.useState<
+    { id: string; eventType: string; note: string | null; occurredAt: Date }[]
+  >([]);
+
+  React.useEffect(() => {
+    if (application?.id && isOpen) {
+      getApplicationActivities(application.id)
+        .then((data) => setActivities(data || []))
+        .catch(console.error);
+    }
+  }, [application?.id, isOpen]);
+
   if (!isOpen || !application) return null;
 
   const totalSkills = application.requiredSkills.length;
@@ -247,13 +262,39 @@ export function ApplicationDrawer({
             {application.notes && (
               <div className="rounded-xl border border-slate-200/90 p-4 space-y-2 dark:border-slate-800">
                 <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Interview Preparation & Notes
+                  Interview Preparation &amp; Notes
                 </span>
                 <p className="text-xs text-slate-700 leading-relaxed dark:text-slate-300">
                   {application.notes}
                 </p>
               </div>
             )}
+
+            {/* Activity History Audit Trail */}
+            <div className="rounded-xl border border-slate-200/90 p-4 space-y-3 dark:border-slate-800">
+              <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <History className="h-3.5 w-3.5" />
+                <span>Activity &amp; Audit Trail</span>
+              </div>
+
+              {activities.length === 0 ? (
+                <div className="text-2xs text-slate-400">No activity history logged yet.</div>
+              ) : (
+                <div className="space-y-2.5 border-l-2 border-slate-200 pl-3 dark:border-slate-800">
+                  {activities.map((act) => (
+                    <div key={act.id} className="space-y-0.5 text-xs">
+                      <div className="flex items-center justify-between text-2xs text-slate-400">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
+                          {act.eventType.replace("_", " ")}
+                        </span>
+                        <span>{formatRelativeTime(act.occurredAt)}</span>
+                      </div>
+                      {act.note && <p className="text-2xs text-slate-600 dark:text-slate-400">{act.note}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Application Dates */}
             <div className="flex items-center justify-between text-2xs text-slate-400 border-t border-slate-100 pt-3 dark:border-slate-800">
