@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7.5" fill="#090b10"/>
+  <!-- Dock Container -->
+  <rect x="4.5" y="4.5" width="23" height="23" rx="5" fill="none" stroke="#f4f4f5" stroke-width="2"/>
+  <!-- Lane Divider -->
+  <path d="M4.5 12h23" stroke="#f4f4f5" stroke-width="1.8"/>
+  <!-- Vertical Column Divider -->
+  <path d="M12 27.5V12" stroke="#f4f4f5" stroke-width="1.8"/>
+  <!-- Success / Dock checkmark in primary lane -->
+  <path d="m16.5 20 3 3 5.5-6.5" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

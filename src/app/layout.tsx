@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   title: "ApplyDock — Smart Job Application & Skill Tracker",
   description:
     "The disciplined job search workspace for high-stakes engineers. Track applications, stay ahead of interview milestones, and bridge skill gaps with ApplyDock.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
   openGraph: {
     title: "ApplyDock — Smart Job Application & Skill Tracker",
     description:
