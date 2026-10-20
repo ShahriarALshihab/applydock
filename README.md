@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ApplyDock ⚓
 
-## Getting Started
+> **The intelligent, disciplined job search & interview command center for ambitious engineers.**
 
-First, run the development server:
+ApplyDock replaces messy spreadsheets and disjointed notes with high-density pipeline management, automated relative-time interview countdowns, structured `৳` compensation benchmarking, and 1–5 technical skill gap profiling.
 
+---
+
+## 🌟 Key Capabilities
+
+### 1. Dual-Engine Application Pipeline
+- **Adaptive Kanban Board**: 6 core stages (`Wishlist`, `Applied`, `Screening`, `Interview`, `Offer`, `Rejected`/`Withdrawn`) engineered with zero forced horizontal scrolling.
+- **Tabular Data Grid**: High-density table view with real-time keyword search, work mode filtering (`Hybrid`, `Remote`, `On-site`), and column sorting.
+- **Slide-Over Inspector Drawer**: Comprehensive drawer detailing job specifications, recruiter contacts, technical skills match/gap indicators, private preparation notes, and an immutable audit timeline.
+
+### 2. Interview Milestones & Overdue Alerts
+- Automated relative-time countdown calculations (`In 2 days`, `Tomorrow`, `Today`, `Overdue`).
+- Visual priority badges and direct reminders for hiring manager follow-ups.
+
+### 3. Structured Bangladeshi Compensation Tracking (`৳`)
+- Formatted with standard Bangladeshi Taka (`৳`) notation across all views (never generic dollar signs or raw currency codes).
+- Tracks monthly gross base pay, festival bonuses (2x annual), and market benchmarks across mid-level, senior, and lead engineering roles.
+
+### 4. 1–5 Technical Skill Profiler & Gap Analysis
+- Standardized 5-level proficiency scale:
+  - **1**: Novice
+  - **2**: Advanced Beginner
+  - **3**: Competent
+  - **4**: Proficient
+  - **5**: Expert
+- Automatic comparison of declared competencies against target job requirements with visual progress meters and delta gap alerts (`Target: L5 (+2)`).
+
+### 5. Prioritized Sprint Milestones
+- Actionable learning tasks linked directly to target skills with due dates and priority badges (`High`, `Medium`, `Low`).
+- One-click task completion toggling with animated progress tracking.
+
+### 6. Full Data Portability & Privacy
+- **RFC 4180 CSV Export**: One-click safe CSV export with proper delimiter quoting, formula injection protection, and CRLF line breaks.
+- **Full Workspace JSON Backup**: Download a complete structured archive of all your applications, skills, and tasks.
+- **User-Isolated Database**: Backed by PostgreSQL with strict user-id scoping on every server action.
+
+### 7. Modern Art-Directed Presentation
+- **Simplify.jobs-Inspired Hero**: Clear typography with **DM Serif Display**, generous whitespace, and focused CTAs.
+- **Floating Pill Navbar**: Smoothly transforms into a centered, rounded-full floating pill on scroll with backdrop blur.
+- **Dark/Light Theme**: Purpose-built palette with warm neutral porcelain surfaces and restrained emerald accent (`#0f766e` / `#10b981`).
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [Next.js 16.4.2](https://nextjs.org/) (App Router, Turbopack) |
+| **Language** | TypeScript (Strict mode) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) & Lucide React |
+| **Typography** | Geist Sans & DM Serif Display |
+| **Database** | PostgreSQL ([Supabase](https://supabase.com/)) |
+| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) with drizzle-kit migrations |
+| **Authentication** | [NextAuth.js v5](https://authjs.dev/) (Edge-safe split architecture, bcryptjs) |
+| **Validation** | [Zod](https://zod.dev/) |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js `v20.x` or `v24.x`
+- npm `v10.x` or higher
+- A PostgreSQL database connection (e.g. Supabase, Neon, or local PostgreSQL)
+
+### 1. Clone & Install Dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/ShahriarALshihab/applydock.git
+cd applydock
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Fill in your database URL and generate an auth secret:
+```env
+DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
+AUTH_SECRET="your-32-byte-base64-secret"
+NEXTAUTH_URL="http://localhost:3000"
+AUTH_URL="http://localhost:3000"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Run Database Migrations & Seed Data
+```bash
+# Push schema directly to database
+npx drizzle-kit push
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# (Optional) Seed demo user, applications, skills, and tasks
+npx tsx src/db/seed.ts
+```
 
-## Learn More
+### 4. Start Development Server
+```bash
+npm run dev
+```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔑 Demo Account Credentials
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For quick evaluation, sign in at **`/login`** using the seeded account:
+- **Email**: `demo@proofly.local`
+- **Password**: `Password123!`
 
-## Deploy on Vercel
+Or create a new private workspace anytime at **`/register`**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧪 Quality & Verification Scripts
+
+```bash
+# Type check all TypeScript files
+npm run typecheck
+
+# Lint check with zero warnings allowed
+npm run lint
+
+# Compile optimized production build
+npm run build
+```
+
+---
+
+## 📄 License
+MIT License. Built for disciplined engineering careers.
