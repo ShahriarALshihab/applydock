@@ -46,7 +46,7 @@ export function InteractiveHeroPreview() {
             <div className="h-3 w-3 rounded-full bg-emerald-400/80" />
             <span className="ml-2 text-2xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <LayoutGrid className="h-3 w-3 text-indigo-500" />
-              <span>Proofly Workspace — Engineering Career Pipeline (Live Interactive Preview)</span>
+              <span>ApplyDock Workspace — Engineering Career Pipeline (Live Interactive Preview)</span>
             </span>
           </div>
 

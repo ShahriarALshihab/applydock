@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerUser } from "@/lib/actions/auth-actions";
-import { Briefcase, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardFooter } from "@/components/ui/Card";
+import { Logo } from "@/components/layout/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();

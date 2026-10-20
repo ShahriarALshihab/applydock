@@ -20,14 +20,13 @@ export function ScrollReveal({
   React.useEffect(() => {
     // Immediate fallback if IntersectionObserver is unsupported
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
-      setIsVisible(true);
+      requestAnimationFrame(() => setIsVisible(true));
       return;
     }
 
     // Check if user prefers reduced motion
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      setIsVisible(true);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestAnimationFrame(() => setIsVisible(true));
       return;
     }
 
