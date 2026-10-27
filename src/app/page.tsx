@@ -14,7 +14,9 @@ import {
   Check,
   X as CloseIcon,
   LayoutGrid,
+  LayoutDashboard,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Logo } from "@/components/layout/Logo";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
@@ -94,6 +96,8 @@ const FEATURES = [
 /* ─────────────────────────── Main Homepage ─────────────────────────── */
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated" && !!session?.user;
   const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
   const [activeTab, setActiveTab] = React.useState<"pipeline" | "skills" | "timeline">("pipeline");
 
@@ -137,19 +141,36 @@ export default function HomePage() {
 
           {/* Action CTAs */}
           <ScrollReveal delayMs={180}>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/login">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
-                  <span>Explore Demo Workspace</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </Link>
-              <Link href="/register">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
-                  <span>Create Free Account</span>
-                </button>
-              </Link>
-            </div>
+            {isAuthenticated ? (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/dashboard">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Go to My Dashboard</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </Link>
+                <Link href="/applications">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
+                    <span>View Applications</span>
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/login">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
+                    <span>Explore Demo Workspace</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </Link>
+                <Link href="/register">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
+                    <span>Create Free Account</span>
+                  </button>
+                </Link>
+              </div>
+            )}
           </ScrollReveal>
 
           {/* Micro Trust Indicators */}
@@ -633,19 +654,36 @@ export default function HomePage() {
               Organize your pipeline, bridge technical gaps, and interview with complete clarity.
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/register">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
-                  <span>Create Free Workspace</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </Link>
-              <Link href="/login">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
-                  Sign In as Demo User
-                </button>
-              </Link>
-            </div>
+            {isAuthenticated ? (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/dashboard">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Return to Dashboard</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </Link>
+                <Link href="/applications">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
+                    <span>Manage Applications</span>
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/register">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-slate-800 active:scale-98 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 cursor-pointer">
+                    <span>Create Free Workspace</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </Link>
+                <Link href="/login">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-all hover:bg-slate-50 shadow-2xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer">
+                    Sign In as Demo User
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
         </ScrollReveal>
       </section>
